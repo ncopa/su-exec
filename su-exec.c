@@ -24,6 +24,7 @@ int main(int argc, char *argv[])
 	char *user, *group, **cmdargv;
 	struct passwd *pw = NULL;
 	char *end;
+	gid_t gid;
 
 	argv0 = argv[0];
 	if (argc < 3)
@@ -38,7 +39,7 @@ int main(int argc, char *argv[])
 
 	if (group && group[0] != '\0') {
 		struct group *gr = NULL;
-		gid_t gid = strtol(group, &end, 10);
+		gid = strtol(group, &end, 10);
 		if (*end != '\0') {
 			gr = getgrnam(group);
 			if (gr == NULL)
@@ -52,6 +53,9 @@ int main(int argc, char *argv[])
 
 	if (user[0] != '\0') {
 		uid_t uid = strtol(user, &end, 10);
+		int ngroups = 0;
+		gid_t *glist = NULL;
+
 		if (*end == '\0') {
 			pw = getpwuid(uid);
 		} else {
@@ -62,6 +66,21 @@ int main(int argc, char *argv[])
 		}
 
 		setenv("HOME", pw != NULL ? pw->pw_dir : "/", 1);
+		while (pw) {
+			int r = getgrouplist(pw->pw_name,
+					 group && group[0] ? gid : pw->pw_gid,
+					 glist, &ngroups);
+
+			if (r >= 0) {
+				if (setgroups(ngroups, glist) < 0)
+					err(1, "setgroups");
+				break;
+			}
+
+			glist = realloc(glist, ngroups * sizeof(gid_t));
+			if (glist == NULL)
+				err(1, "malloc");
+		}
 
 		if (setuid(uid) < 0)
 			err(1, "setuid(%i)", uid);
