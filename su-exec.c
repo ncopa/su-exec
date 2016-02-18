@@ -22,9 +22,10 @@ static void usage(int exitcode)
 int main(int argc, char *argv[])
 {
 	char *user, *group, **cmdargv;
-	struct passwd *pw = NULL;
 	char *end;
-	gid_t gid;
+
+	uid_t uid = getuid();
+	gid_t gid = getgid();
 
 	argv0 = argv[0];
 	if (argc < 3)
@@ -37,39 +38,49 @@ int main(int argc, char *argv[])
 
 	cmdargv = &argv[2];
 
-	if (group && group[0] != '\0') {
-		struct group *gr = NULL;
-		gid = strtol(group, &end, 10);
-		if (*end != '\0') {
-			gr = getgrnam(group);
-			if (gr == NULL)
-				err(1, "%s", group);
-			gid = gr->gr_gid;
-		}
-
-		if (setgid(gid) < 0)
-			err(1, "setgid(%i)", gid);
+	struct passwd *pw = NULL;
+	if (user[0] != '\0') {
+		pw = getpwnam(user);
+		uid_t nuid = strtol(user, &end, 10);
+		if (*end == '\0')
+			uid = nuid;
+	}
+	if (pw == NULL) {
+		pw = getpwuid(uid);
+	}
+	if (pw != NULL) {
+		uid = pw->pw_uid;
+		gid = pw->pw_gid;
 	}
 
-	if (user[0] != '\0') {
-		uid_t uid = strtol(user, &end, 10);
+	setenv("HOME", pw != NULL ? pw->pw_dir : "/", 1);
+
+	if (group && group[0] != '\0') {
+		/* group was specified, ignore grouplist for setgroups later */
+		pw = NULL;
+
+		struct group *gr = getgrnam(group);
+		if (gr == NULL) {
+			gid_t ngid = strtol(group, &end, 10);
+			if (*end == '\0') {
+				gr = getgrgid(ngid);
+				if (gr == NULL)
+					gid = ngid;
+			}
+		}
+		if (gr != NULL)
+			gid = gr->gr_gid;
+	}
+
+	if (pw == NULL) {
+		if (setgroups(1, &gid) < 0)
+			err(1, "setgroups(%i)", gid);
+	} else {
 		int ngroups = 0;
 		gid_t *glist = NULL;
 
-		if (*end == '\0') {
-			pw = getpwuid(uid);
-		} else {
-			pw = getpwnam(user);
-			if (pw == NULL)
-				err(1, "%s", user);
-			uid = pw->pw_uid;
-		}
-
-		setenv("HOME", pw != NULL ? pw->pw_dir : "/", 1);
-		while (pw) {
-			int r = getgrouplist(pw->pw_name,
-					 group && group[0] ? gid : pw->pw_gid,
-					 glist, &ngroups);
+		while (1) {
+			int r = getgrouplist(pw->pw_name, gid, glist, &ngroups);
 
 			if (r >= 0) {
 				if (setgroups(ngroups, glist) < 0)
@@ -81,11 +92,13 @@ int main(int argc, char *argv[])
 			if (glist == NULL)
 				err(1, "malloc");
 		}
-
-		if (setuid(uid) < 0)
-			err(1, "setuid(%i)", uid);
-
 	}
+
+	if (setgid(gid) < 0)
+		err(1, "setgid(%i)", gid);
+
+	if (setuid(uid) < 0)
+		err(1, "setuid(%i)", uid);
 
 	execvp(cmdargv[0], cmdargv);
 	err(1, "%s", cmdargv[0]);
