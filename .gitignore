@@ -32,3 +32,6 @@
 *.dSYM/
 
 su-exec
+
+#packaging
+out/
