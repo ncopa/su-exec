@@ -35,4 +35,4 @@ su-exec
 
 #packaging
 out/
-packaging/**/test-image/*
+packaging/**/test-image/artifacts/

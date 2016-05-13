@@ -18,7 +18,8 @@ ${TESTONLY} || rm -rf out
 
 ${TESTONLY} || docker run --env-file ../env.list --env="GIT_COMMIT=${GIT_COMMIT:-gitcommitstub}" --rm -v $(pwd)/build-inside:/build-inside:ro -v ${SRC_DIR}:/source:ro -v $(pwd)/out:/out -w /build-inside ${BUILD_IMAGE} /build-inside/build-package
 
-cp -f ../run_tests ../setup_tests out/*.deb test-image
+rm -rf test-image/artifacts ; mkdir -p test-image/artifacts
+cp -f ../run_tests ../setup_tests out/*.deb test-image/artifacts
 docker build --pull -t ${TEST_IMAGE} test-image
 
 rm -rf test-logs
