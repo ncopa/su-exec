@@ -1,9 +1,10 @@
 #!/bin/bash -ex
+groupadd -g 65534 -f nogroup
+usermod -g games games
 usermod -a -G users games
-dpkg -i /tmp/*.deb
 
 # add "nobody" to ALL groups (makes testing edge cases more interesting)
-cut -d: -f1 /etc/group | xargs -n1 addgroup nobody
+cut -d: -f1 /etc/group | xargs -I'{}' -n1 usermod -a -G {} nobody
 
 { \
 		echo '#!/bin/sh'; \
