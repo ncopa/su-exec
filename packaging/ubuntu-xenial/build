@@ -1,0 +1,27 @@
+#!/bin/bash -ex
+# enter the directory where the build script is located
+cd "${0%/*}"
+
+TESTONLY="false"
+[ "--testonly" == "$1" ] && { TESTONLY="true" ; }
+
+# some useful variables
+SRC_DIR="$(pwd)/../../"
+CURRENT_DISTRO=$(basename $(pwd))
+BUILD_IMAGE="su-exec-${CURRENT_DISTRO}-build"
+TEST_IMAGE="su-exec-${CURRENT_DISTRO}-test"
+
+# create the build image from the provided directory
+${TESTONLY} || docker build --pull -t ${BUILD_IMAGE} build-image
+
+${TESTONLY} || rm -rf out
+
+${TESTONLY} || docker run --env-file ../env.list --env="GIT_COMMIT=${GIT_COMMIT:-gitcommitstub}" --rm -v $(pwd)/build-inside:/build-inside:ro -v ${SRC_DIR}:/source:ro -v $(pwd)/out:/out -w /build-inside ${BUILD_IMAGE} /build-inside/build-package
+
+rm -rf test-image/artifacts ; mkdir -p test-image/artifacts
+cp -f ../run_tests ../setup_tests out/*.deb test-image/artifacts
+docker build --pull -t ${TEST_IMAGE} test-image
+
+rm -rf test-logs
+docker run --env-file ../env.list --rm -v $(pwd)/out:/out:ro -w / ${TEST_IMAGE} /usr/bin/run_tests || { echo "ERROR: the test phase failed." ; exit 1 ; }
+ echo "Test phase succeeded."
