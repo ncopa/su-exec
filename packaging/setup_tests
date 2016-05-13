@@ -1,0 +1,26 @@
+#!/bin/bash -ex
+usermod -a -G users games
+dpkg -i /tmp/*.deb
+
+# add "nobody" to ALL groups (makes testing edge cases more interesting)
+cut -d: -f1 /etc/group | xargs -n1 addgroup nobody
+
+{ \
+		echo '#!/bin/sh'; \
+		echo 'set -ex'; \
+		echo; \
+		echo 'spec="$1"; shift'; \
+		echo; \
+		echo 'expec="$1"; shift'; \
+		echo 'real="$(su-exec "$spec" id -u):$(su-exec "$spec" id -g):$(su-exec "$spec" id -G)"'; \
+		echo '[ "$expec" = "$real" ]'; \
+		echo; \
+		echo 'expec="$1"; shift'; \
+		# have to "|| true" this one because of "id: unknown ID 1000" (rightfully) having a nonzero exit code
+		echo 'real="$(su-exec "$spec" id -un):$(su-exec "$spec" id -gn):$(su-exec "$spec" id -Gn)" || true'; \
+		echo '[ "$expec" = "$real" ]'; \
+} > /usr/local/bin/su-exec-t \
+	&& chmod +x /usr/local/bin/su-exec-t
+
+# adjust users so we can make sure the tests are interesting
+chgrp nogroup /usr/bin/su-exec && chmod +s /usr/bin/su-exec

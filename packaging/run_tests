@@ -1,0 +1,36 @@
+#!/bin/bash -ex
+date
+id
+
+su-exec-t 0 "0:0:$(id -G root)" "root:root:$(id -Gn root)"
+su-exec-t 0:0 '0:0:0' 'root:root:root'
+su-exec-t root "0:0:$(id -G root)" "root:root:$(id -Gn root)"
+su-exec-t 0:root '0:0:0' 'root:root:root'
+su-exec-t root:0 '0:0:0' 'root:root:root'
+su-exec-t root:root '0:0:0' 'root:root:root'
+su-exec-t 1000 "1000:$(id -g):$(id -g)" "1000:$(id -gn):$(id -gn)"
+su-exec-t 0:1000 '0:1000:1000' 'root:1000:1000'
+su-exec-t 1000:1000 '1000:1000:1000' '1000:1000:1000'
+su-exec-t root:1000 '0:1000:1000' 'root:1000:1000'
+su-exec-t 1000:root '1000:0:0' '1000:root:root'
+su-exec-t 1000:daemon "1000:$(id -g daemon):$(id -g daemon)" '1000:daemon:daemon'
+su-exec-t games "$(id -u games):$(id -g games):$(id -G games)" 'games:games:games users'
+su-exec-t games:daemon "$(id -u games):$(id -g daemon):$(id -g daemon)" 'games:daemon:daemon'
+
+su-exec-t 0: "0:0:$(id -G root)" "root:root:$(id -Gn root)"
+su-exec-t '' "$(id -u):$(id -g):$(id -G)" "$(id -un):$(id -gn):$(id -Gn)"
+su-exec-t ':0' "$(id -u):0:0" "$(id -un):root:root"
+
+[ "$(su-exec 0 env | grep '^HOME=')" = 'HOME=/root' ]
+[ "$(su-exec 0:0 env | grep '^HOME=')" = 'HOME=/root' ]
+[ "$(su-exec root env | grep '^HOME=')" = 'HOME=/root' ]
+[ "$(su-exec 0:root env | grep '^HOME=')" = 'HOME=/root' ]
+[ "$(su-exec root:0 env | grep '^HOME=')" = 'HOME=/root' ]
+[ "$(su-exec root:root env | grep '^HOME=')" = 'HOME=/root' ]
+[ "$(su-exec 0:1000 env | grep '^HOME=')" = 'HOME=/root' ]
+[ "$(su-exec root:1000 env | grep '^HOME=')" = 'HOME=/root' ]
+[ "$(su-exec 1000 env | grep '^HOME=')" = 'HOME=/' ]
+[ "$(su-exec 1000:0 env | grep '^HOME=')" = 'HOME=/' ]
+[ "$(su-exec 1000:root env | grep '^HOME=')" = 'HOME=/' ]
+[ "$(su-exec games env | grep '^HOME=')" = 'HOME=/usr/games' ]
+[ "$(su-exec games:daemon env | grep '^HOME=')" = 'HOME=/usr/games' ]

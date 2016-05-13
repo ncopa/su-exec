@@ -14,18 +14,13 @@ TEST_IMAGE="su-exec-${CURRENT_DISTRO}-test"
 # create the build image from the provided directory
 ${TESTONLY} || docker build --pull -t ${BUILD_IMAGE} build-image
 
-#clean previous packages. you may want to omit this if
-#you want to preserve them all and have got other means of removing them.
 ${TESTONLY} || rm -rf out
 
-# run the build-package script from the build-inside directory inside a container
-# started from the above build image. The script will access the source directory of 
-# the application in /source (read-only), can access the build-inside directory from /build-inside (read-only),
-# and should write the packages in /out.
-#
-# the env.list file is a good shortcut for sharing env variable that may be reused from various packages,
-# but you can choose to forward additional variables with the --env switch. It's quite common to forward
-# things like BUILD_NUMBER or GIT_COMMIT from a CI server to use them within the package.
 ${TESTONLY} || docker run --env-file ../env.list --env="GIT_COMMIT=${GIT_COMMIT:-gitcommitstub}" --rm -v $(pwd)/build-inside:/build-inside:ro -v ${SRC_DIR}:/source:ro -v $(pwd)/out:/out -w /build-inside ${BUILD_IMAGE} /build-inside/build-package
 
-test/test.sh
+cp -f ../run_tests ../setup_tests out/*.deb test-image
+docker build --pull -t ${TEST_IMAGE} test-image
+
+rm -rf test-logs
+docker run --env-file ../env.list --rm -v $(pwd)/out:/out:ro -w / ${TEST_IMAGE} /usr/bin/run_tests || { echo "ERROR: the test phase failed." ; exit 1 ; }
+ echo "Test phase succeeded."
