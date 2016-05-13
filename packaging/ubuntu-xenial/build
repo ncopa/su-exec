@@ -16,7 +16,7 @@ ${TESTONLY} || docker build --pull -t ${BUILD_IMAGE} build-image
 
 ${TESTONLY} || rm -rf out
 
-${TESTONLY} || docker run --env-file ../env.list --env="GIT_COMMIT=${GIT_COMMIT:-gitcommitstub}" --rm -v $(pwd)/build-inside:/build-inside:ro -v ${SRC_DIR}:/source:ro -v $(pwd)/out:/out -w /build-inside ${BUILD_IMAGE} /build-inside/build-package
+${TESTONLY} || docker run --env-file ../env.list --env="ITERATION=${ITERATION:-1}" --env="GIT_COMMIT=${GIT_COMMIT:-gitcommitstub}" --rm -v $(pwd)/build-inside:/build-inside:ro -v ${SRC_DIR}:/source:ro -v $(pwd)/out:/out -w /build-inside ${BUILD_IMAGE} /build-inside/build-package
 
 rm -rf test-image/artifacts ; mkdir -p test-image/artifacts
 cp -f ../run_tests ../setup_tests out/*.deb test-image/artifacts

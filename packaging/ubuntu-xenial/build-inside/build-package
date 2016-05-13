@@ -17,4 +17,4 @@ cd /out
 # is installing all the things in a separate dir to prevent listing all the files - but it's
 # just personal taste.
 # remember to list all your runtime dependencies, e.g. the shared libraries you link to.
-fpm -t deb -s dir -n su-exec --version ${VERSION} --description "su-exec ${GIT_COMMIT}" -C / /usr/bin/su-exec
+fpm -t deb -s dir -n su-exec --version ${VERSION} --iteration "${ITERATION}-xenial" --description "su-exec ${GIT_COMMIT}" -C / /usr/bin/su-exec
