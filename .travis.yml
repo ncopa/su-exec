@@ -1,0 +1,6 @@
+language: bash
+services:
+  - docker
+script:
+  - make build-docker
+  - make test
