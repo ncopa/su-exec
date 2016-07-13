@@ -13,5 +13,8 @@ $(PROG): $(SRCS)
 $(PROG)-static: $(SRCS)
 	$(CC) $(CFLAGS) -o $@ $^ -static $(LDFLAGS)
 
+test: $(PROG)
+	./test.sh ./su-exec
+
 clean:
 	rm -f $(PROG) $(PROG)-static
