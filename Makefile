@@ -1,5 +1,5 @@
 
-CFLAGS ?= -Wall -Werror -g
+CFLAGS ?= -Wall -Werror
 LDFLAGS ?=
 
 PROG := su-exec
@@ -13,5 +13,8 @@ $(PROG): $(SRCS)
 $(PROG)-static: $(SRCS)
 	$(CC) $(CFLAGS) -o $@ $^ -static $(LDFLAGS)
 
+$(PROG)-debug: $(SRCS)
+	$(CC) -g $(CFLAGS) -o $@ $^ $(LDFLAGS)
+
 clean:
-	rm -f $(PROG) $(PROG)-static
+	rm -f $(PROG) $(PROG)-static $(PROG)-debug
