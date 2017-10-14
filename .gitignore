@@ -32,3 +32,5 @@
 *.dSYM/
 
 su-exec
+su-exec-static
+su-exec-debug

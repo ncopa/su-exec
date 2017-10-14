@@ -1,5 +1,5 @@
 
-CFLAGS ?= -Wall -Werror -g
+CFLAGS ?= -Wall -Werror
 LDFLAGS ?=
 
 PROG := su-exec
@@ -12,12 +12,17 @@ all: $(PROG)
 
 $(PROG): $(SRCS)
 	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS)
+	strip $@
 
 $(PROG)-static: $(SRCS)
 	$(CC) $(CFLAGS) -o $@ $^ -static $(LDFLAGS)
+	strip $@
+
+$(PROG)-debug: $(SRCS)
+	$(CC) -g $(CFLAGS) -o $@ $^ $(LDFLAGS)
 
 install:
 	install -m 0755 $(PROG) $(INSTALL_DIR)
 
 clean:
-	rm -f $(PROG) $(PROG)-static
+	rm -f $(PROG) $(PROG)-static $(PROG)-debug
