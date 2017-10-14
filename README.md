@@ -24,6 +24,18 @@ can be used instead of names. Example:
 $ su-exec apache:1000 /usr/sbin/httpd -f /opt/www/httpd.conf
 ```
 
+## Installation
+
+To compile and install run
+
+```shell
+make
+make install
+```
+
+which will install under `/usr/local`. To install somewhere else you can use the
+`PREFIX` variable, like `make install PREFIX=$HOME/software`.
+
 ## TTY & parent/child handling
 
 Notice how `su` will make `ps` be a child of a shell while `su-exec`
