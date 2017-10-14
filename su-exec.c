@@ -11,12 +11,22 @@
 #include <string.h>
 #include <unistd.h>
 
+
 static char *argv0;
 
 static void usage(int exitcode)
 {
 	printf("Usage: %s user-spec command [args]\n", argv0);
+	printf("Usage: %s -l\n\tShows license.\n", argv0);
 	exit(exitcode);
+}
+
+#include "license.inc"
+static void print_license()
+{
+	unsigned int i;
+	for (i=0; i<LICENSE_len; i++)
+		putchar(LICENSE[i]);
 }
 
 int main(int argc, char *argv[])
@@ -28,6 +38,10 @@ int main(int argc, char *argv[])
 	gid_t gid = getgid();
 
 	argv0 = argv[0];
+	if (argc == 2 && strcmp(argv[1], "-l") == 0) {
+		print_license();
+		return 0;
+	}
 	if (argc < 3)
 		usage(0);
 
