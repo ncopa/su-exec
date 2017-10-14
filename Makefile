@@ -22,7 +22,7 @@ $(PROG)-debug: $(SRCS)
 	$(CC) -g $(CFLAGS) -o $@ $^ $(LDFLAGS)
 
 install:
-	install -m 0755 $(PROG) $(INSTALL_DIR)
+	install -m 0755 $(PROG) $(DESTDIR)$(INSTALL_DIR)
 
 clean:
 	rm -f $(PROG) $(PROG)-static $(PROG)-debug
