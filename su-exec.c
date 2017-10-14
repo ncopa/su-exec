@@ -40,10 +40,10 @@ int main(int argc, char *argv[])
 	argv0 = argv[0];
 	if (argc == 2 && strcmp(argv[1], "-l") == 0) {
 		print_license();
-		return 0;
+		return EXIT_SUCCESS;
 	}
 	if (argc < 3)
-		usage(1);
+		usage(EXIT_FAILURE);
 
 	user = argv[1];
 	group = strchr(user, ':');
@@ -88,7 +88,7 @@ int main(int argc, char *argv[])
 
 	if (pw == NULL) {
 		if (setgroups(1, &gid) < 0)
-			err(1, "setgroups(%i)", gid);
+			err(EXIT_FAILURE, "setgroups(%i)", gid);
 	} else {
 		int ngroups = 0;
 		gid_t *glist = NULL;
@@ -98,24 +98,24 @@ int main(int argc, char *argv[])
 
 			if (r >= 0) {
 				if (setgroups(ngroups, glist) < 0)
-					err(1, "setgroups");
+					err(EXIT_FAILURE, "setgroups");
 				break;
 			}
 
 			glist = realloc(glist, ngroups * sizeof(gid_t));
 			if (glist == NULL)
-				err(1, "malloc");
+				err(EXIT_FAILURE, "malloc");
 		}
 	}
 
 	if (setgid(gid) < 0)
-		err(1, "setgid(%i)", gid);
+		err(EXIT_FAILURE, "setgid(%i)", gid);
 
 	if (setuid(uid) < 0)
-		err(1, "setuid(%i)", uid);
+		err(EXIT_FAILURE, "setuid(%i)", uid);
 
 	execvp(cmdargv[0], cmdargv);
-	err(1, "%s", cmdargv[0]);
+	err(EXIT_FAILURE, "%s", cmdargv[0]);
 
-	return 1;
+	return EXIT_FAILURE;
 }
