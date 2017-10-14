@@ -18,5 +18,6 @@ PID   USER     TIME   COMMAND
 
 ## Why reinvent gosu?
 
-This does more or less exactly the same thing as `gosu` but it is only 10kb instead of 1.8MB.
+This does more or less exactly the same thing as [gosu](https://github.com/tianon/gosu)
+but it is only 10kb instead of 1.8MB.
 
