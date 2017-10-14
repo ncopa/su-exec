@@ -1,0 +1,59 @@
+.TH SU-EXEC 8 "14 Oct 2017"
+
+.SH NAME
+su-exec \- change user id and group id before executing a program
+
+.SH SYNOPSIS
+\fBsu-exec\fP \fIuser-spec\fP \fIcommand\fP [ \fIarguments...\fP ]
+
+.SH DESCRIPTION
+\fBsu-exec\fP executes a program with modified privileges. The program
+will be exceuted directly and not run as a child, like su and sudo does,
+which avoids TTY and signal issues.
+
+Notice that su-exec depends on being run by the root user, non-root
+users do not have permission to change uid/gid.
+
+.SH OPTIONS
+.TP
+\fIuser-spec\fP
+is either a user name (e.g. \fBnobody\fP) or user name and group name
+separated with colon (e.g. \fBnobody:ftp\fP). Numeric uid/gid values
+can be used instead of names.
+
+.TP
+\fIcommand\fP
+is the program to execute. Can be either absolute or relative path.
+
+.SH EXAMPLES
+
+.TP
+Execute httpd as user \fIapache\fP and gid value 1000 with the two specified arguments:
+
+$ \fBsu-exec apache:1000 /usr/sbin/httpd -f /opt/www/httpd.conf\fP
+
+.SH ENVIRONMENT VARIABLES
+
+.TP
+\fBHOME\fP
+Is updated to the value matching the user entry in \fC/etc/passwd\fP.
+
+.TP
+\fBPATH\fP
+Is used for searching for the program to execute.
+
+Since su-exec is not running as a suid binary, the dynamic linker or
+libc will not strip or ignore variables like LD_LIBRARY_PATH etc.
+
+.SH EXIT STATUS
+.TP
+\fB1\fP
+If \fbsu-exec\fR fails to change priveledges or execute the program it
+will return \fB1\fP. In the successfull case the exit value will be
+whatever the executed program returns.
+
+.SH "SEE ALSO"
+su(1), runuser(8), sudo(8), gosu(1)
+
+.SH BUGS
+\fBUSER\fP and \fBLOGNAME\fP environmental variables are not updated.
