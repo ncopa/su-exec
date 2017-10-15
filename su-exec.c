@@ -87,7 +87,11 @@ int main(int argc, char *argv[])
 		gid = pw->pw_gid;
 	}
 
-	setenv("HOME", pw != NULL ? pw->pw_dir : "/", 1);
+	if (pw != NULL) {
+		setenv("HOME", pw->pw_dir, 1);
+	} else {
+		setenv("HOME", "/", 1);
+	}
 
 	if (group && group[0] != '\0') {
 		/* group was specified, ignore grouplist for setgroups later */
