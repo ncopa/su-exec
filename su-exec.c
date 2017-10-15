@@ -11,6 +11,12 @@
 #include <string.h>
 #include <unistd.h>
 
+#include "static_assert.h"
+
+STATIC_ASSERT( sizeof(uid_t) <= 4, "The size of uid_t is too big, the source must be updated" );
+#define UID_T_STRING_SIZE 11 /* Worst case: "4294967295\0" */
+#define UID_T_FMT "%lu"
+#define UID_T_FMT_CAST (unsigned long)
 
 static char *argv0;
 
@@ -89,8 +95,14 @@ int main(int argc, char *argv[])
 
 	if (pw != NULL) {
 		setenv("HOME", pw->pw_dir, 1);
+		setenv("USER", pw->pw_name, 1);
+		setenv("LOGNAME", pw->pw_name, 1);
 	} else {
+		char tmp[UID_T_STRING_SIZE];
+		sprintf(tmp, UID_T_FMT, UID_T_FMT_CAST uid);
 		setenv("HOME", "/", 1);
+		setenv("USER", tmp, 1);
+		setenv("LOGNAME", tmp, 1);
 	}
 
 	if (group && group[0] != '\0') {
