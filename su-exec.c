@@ -29,6 +29,26 @@ static void print_license()
 		putchar(LICENSE[i]);
 }
 
+#ifdef linux
+#define WARNING_setgroups " (on Linux you need CAP_SETGID)"
+#define WARNING_setgid " (on Linux you need CAP_SETGID)"
+#define WARNING_setuid " (on Linux you need CAP_SETUID)"
+#else
+#define WARNING_setgroups ""
+#define WARNING_setgid ""
+#define WARNING_setuid ""
+#endif
+
+static void print_eperm_warning(const char *extra_warn)
+{
+	int saved_errno;
+	if (errno != EPERM)
+		return;
+	saved_errno = errno;
+	fprintf(stderr, "Insufficient privilege, %s needs to run as root%s.\n", argv0, extra_warn);
+	errno = saved_errno;
+}
+
 int main(int argc, char *argv[])
 {
 	char *user, *group, **cmdargv;
@@ -87,8 +107,10 @@ int main(int argc, char *argv[])
 	}
 
 	if (pw == NULL) {
-		if (setgroups(1, &gid) < 0)
+		if (setgroups(1, &gid) < 0) {
+			print_eperm_warning(WARNING_setgroups);
 			err(EXIT_FAILURE, "setgroups(%i)", gid);
+		}
 	} else {
 		int ngroups = 0;
 		gid_t *glist = NULL;
@@ -97,8 +119,10 @@ int main(int argc, char *argv[])
 			int r = getgrouplist(pw->pw_name, gid, glist, &ngroups);
 
 			if (r >= 0) {
-				if (setgroups(ngroups, glist) < 0)
+				if (setgroups(ngroups, glist) < 0) {
+					print_eperm_warning(WARNING_setgroups);
 					err(EXIT_FAILURE, "setgroups");
+				}
 				break;
 			}
 
@@ -108,11 +132,15 @@ int main(int argc, char *argv[])
 		}
 	}
 
-	if (setgid(gid) < 0)
+	if (setgid(gid) < 0) {
+		print_eperm_warning(WARNING_setgid);
 		err(EXIT_FAILURE, "setgid(%i)", gid);
+	}
 
-	if (setuid(uid) < 0)
+	if (setuid(uid) < 0) {
+		print_eperm_warning(WARNING_setuid);
 		err(EXIT_FAILURE, "setuid(%i)", uid);
+	}
 
 	execvp(cmdargv[0], cmdargv);
 	err(EXIT_FAILURE, "%s", cmdargv[0]);
