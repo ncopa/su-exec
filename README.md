@@ -24,6 +24,15 @@ can be used instead of names. Example:
 $ su-exec apache:1000 /usr/sbin/httpd -f /opt/www/httpd.conf
 ```
 
+Alternatively `user-spec` can be `-e` or `--env` to enable setting the user/group from environment variables instead:
+
+```shell
+$ export SUID=123
+$ export SGID=456
+$ su-exec --env id
+uid=123 gid=456 groups=456
+```
+
 ## Installation
 
 To compile and install run
