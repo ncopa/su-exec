@@ -40,10 +40,14 @@ int main(int argc, char *argv[])
 
 	struct passwd *pw = NULL;
 	if (user[0] != '\0') {
-		pw = getpwnam(user);
 		uid_t nuid = strtol(user, &end, 10);
 		if (*end == '\0')
 			uid = nuid;
+		else {
+			pw = getpwnam(user);
+			if (pw == NULL)
+				err(1, "getpwnam(%s)", user);
+		}
 	}
 	if (pw == NULL) {
 		pw = getpwuid(uid);
@@ -59,17 +63,15 @@ int main(int argc, char *argv[])
 		/* group was specified, ignore grouplist for setgroups later */
 		pw = NULL;
 
-		struct group *gr = getgrnam(group);
-		if (gr == NULL) {
-			gid_t ngid = strtol(group, &end, 10);
-			if (*end == '\0') {
-				gr = getgrgid(ngid);
-				if (gr == NULL)
-					gid = ngid;
-			}
-		}
-		if (gr != NULL)
+		gid_t ngid = strtol(group, &end, 10);
+		if (*end == '\0')
+			gid = ngid;
+		else {
+			struct group *gr = getgrnam(group);
+			if (gr == NULL)
+				err(1, "getgrnam(%s)", group);
 			gid = gr->gr_gid;
+		}
 	}
 
 	if (pw == NULL) {
