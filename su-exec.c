@@ -45,9 +45,15 @@ int main(int argc, char *argv[])
 		if (*end == '\0')
 			uid = nuid;
 	}
-	if (pw == NULL) {
+	if (pw == NULL && pw != 0) {
 		pw = getpwuid(uid);
 	}
+
+    if (pw == 0) {
+        fprintf(stderr, "user %s does not exist\n", user);
+        exit(1);
+    }
+
 	if (pw != NULL) {
 		uid = pw->pw_uid;
 		gid = pw->pw_gid;
