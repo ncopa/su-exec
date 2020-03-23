@@ -1,5 +1,10 @@
+# Simple makefile for su-exec
 
-CFLAGS ?= -Wall -Werror -g
+PREFIX ?= /usr/local
+BINDIR ?= $(PREFIX)/bin
+
+CFLAGS ?= -Wall -Werror -s
+# CFLAGS ?= -Wall -Werror -g
 LDFLAGS ?=
 
 PROG := su-exec
@@ -15,3 +20,11 @@ $(PROG)-static: $(SRCS)
 
 clean:
 	rm -f $(PROG) $(PROG)-static
+
+install: all
+	cp -pv $(PROG) $(BINDIR)/$(PROG) && chown root:root $(BINDIR)/$(PROG)
+
+install-gosu: all
+	cp -pv $(PROG) $(BINDIR)/gosu && chown root:root $(BINDIR)/gosu
+
+# ---------------------------------------------------------------------------

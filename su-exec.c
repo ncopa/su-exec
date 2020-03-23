@@ -16,6 +16,9 @@ static char *argv0;
 static void usage(int exitcode)
 {
 	printf("Usage: %s user-spec command [args]\n", argv0);
+	printf("\nDocumentation:\n");
+	printf("    https://github.com/ncopa/su-exec\n");
+	printf("    https://github.com/tianon/gosu\n");
 	exit(exitcode);
 }
 
