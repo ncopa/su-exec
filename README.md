@@ -4,7 +4,7 @@ switch user and group id, setgroups and exec
 ## Purpose
 
 This is a simple tool that will simply execute a program with different
-privileges. The program will be exceuted directly and not run as a child,
+privileges. The program will be executed directly and not run as a child,
 like su and sudo does, which avoids TTY and signal issues (see below).
 
 Notice that su-exec depends on being run by the root user, non-root
