@@ -29,7 +29,7 @@ int main(int argc, char *argv[])
 
 	argv0 = argv[0];
 	if (argc < 3)
-		usage(1);
+		usage(64);
 
 	user = argv[1];
 	group = strchr(user, ':');
