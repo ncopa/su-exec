@@ -11,12 +11,42 @@
 #include <string.h>
 #include <unistd.h>
 
+
 static char *argv0;
 
 static void usage(int exitcode)
 {
 	printf("Usage: %s user-spec command [args]\n", argv0);
+	printf("Usage: %s -l\n\tShows license.\n", argv0);
 	exit(exitcode);
+}
+
+#include "license.inc"
+static void print_license()
+{
+	unsigned int i;
+	for (i=0; i<LICENSE_len; i++)
+		putchar(LICENSE[i]);
+}
+
+#ifdef linux
+#define WARNING_setgroups " (on Linux you need CAP_SETGID)"
+#define WARNING_setgid " (on Linux you need CAP_SETGID)"
+#define WARNING_setuid " (on Linux you need CAP_SETUID)"
+#else
+#define WARNING_setgroups ""
+#define WARNING_setgid ""
+#define WARNING_setuid ""
+#endif
+
+static void print_eperm_warning(const char *extra_warn)
+{
+	int saved_errno;
+	if (errno != EPERM)
+		return;
+	saved_errno = errno;
+	fprintf(stderr, "Insufficient privilege, %s needs to run as root%s.\n", argv0, extra_warn);
+	errno = saved_errno;
 }
 
 int main(int argc, char *argv[])
@@ -28,8 +58,12 @@ int main(int argc, char *argv[])
 	gid_t gid = getgid();
 
 	argv0 = argv[0];
+	if (argc == 2 && strcmp(argv[1], "-l") == 0) {
+		print_license();
+		return EXIT_SUCCESS;
+	}
 	if (argc < 3)
-		usage(0);
+		usage(EXIT_FAILURE);
 
 	user = argv[1];
 	group = strchr(user, ':');
@@ -75,8 +109,10 @@ int main(int argc, char *argv[])
 	}
 
 	if (pw == NULL) {
-		if (setgroups(1, &gid) < 0)
-			err(1, "setgroups(%i)", gid);
+		if (setgroups(1, &gid) < 0) {
+			print_eperm_warning(WARNING_setgroups);
+			err(EXIT_FAILURE, "setgroups(%i)", gid);
+		}
 	} else {
 		int ngroups = 0;
 		gid_t *glist = NULL;
@@ -85,25 +121,31 @@ int main(int argc, char *argv[])
 			int r = getgrouplist(pw->pw_name, gid, glist, &ngroups);
 
 			if (r >= 0) {
-				if (setgroups(ngroups, glist) < 0)
-					err(1, "setgroups");
+				if (setgroups(ngroups, glist) < 0) {
+					print_eperm_warning(WARNING_setgroups);
+					err(EXIT_FAILURE, "setgroups");
+				}
 				break;
 			}
 
 			glist = realloc(glist, ngroups * sizeof(gid_t));
 			if (glist == NULL)
-				err(1, "malloc");
+				err(EXIT_FAILURE, "malloc");
 		}
 	}
 
-	if (setgid(gid) < 0)
-		err(1, "setgid(%i)", gid);
+	if (setgid(gid) < 0) {
+		print_eperm_warning(WARNING_setgid);
+		err(EXIT_FAILURE, "setgid(%i)", gid);
+	}
 
-	if (setuid(uid) < 0)
-		err(1, "setuid(%i)", uid);
+	if (setuid(uid) < 0) {
+		print_eperm_warning(WARNING_setuid);
+		err(EXIT_FAILURE, "setuid(%i)", uid);
+	}
 
 	execvp(cmdargv[0], cmdargv);
-	err(1, "%s", cmdargv[0]);
+	err(EXIT_FAILURE, "%s", cmdargv[0]);
 
-	return 1;
+	return EXIT_FAILURE;
 }
