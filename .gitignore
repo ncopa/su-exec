@@ -35,3 +35,6 @@
 *.dSYM/
 
 su-exec
+build
+*.deb
+*.rpm
