@@ -1,0 +1,12 @@
+{
+    "editor.rulers": [
+        60,
+        80,
+        100,
+        120,
+        160
+    ],
+    "editor.trimAutoWhitespace": true,
+    "files.encoding": "utf8",
+    "files.eol": "\n"
+}

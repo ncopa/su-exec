@@ -1,14 +1,26 @@
 # su-exec
-switch user and group id, setgroups and exec
 
-## Purpose
+Switch user and group, then exec.
 
-This is a simple tool that will simply execute a program with different
-privileges. The program will be executed directly and not run as a child,
-like su and sudo does, which avoids TTY and signal issues (see below).
+## Introduction
 
-Notice that su-exec depends on being run by the root user, non-root
-users do not have permission to change uid/gid.
+`su-exec` is a very minimal re-write of
+[`gosu`](https://github.com/tianon/gosu) in C, making for a much smaller binary.
+
+This is a simple tool that will simply execute a program with different privileges.
+The program will be executed directly and not run as a child,
+like su and sudo does, which avoids TTY and signal issues.
+
+Notice that su-exec depends on being **run by the root user**,
+non-root users do not have permission to change uid/gid.
+
+## Installation Using Docker
+
+```Dockerfile
+FROM <base-image>
+
+COPY --from=shinsenter/su-exec:latest --chown=root:root --chmod=4755 /su-exec /usr/sbin/su-exec
+```
 
 ## Usage
 
@@ -16,31 +28,24 @@ users do not have permission to change uid/gid.
 su-exec user-spec command [ arguments... ]
 ```
 
-`user-spec` is either a user name (e.g. `nobody`) or user name and group
-name separated with colon (e.g. `nobody:ftp`). Numeric uid/gid values
-can be used instead of names. Example:
+`user-spec` is either a user name (e.g. `nobody`)
+or user name and group name separated with colon (e.g. `www-data:www-data`).
+Numeric uid/gid values can be used instead of names.
+
+For example:
 
 ```shell
-$ su-exec apache:1000 /usr/sbin/httpd -f /opt/www/httpd.conf
+su-exec tianon bash
+su-exec nobody:root bash -c 'whoami && id'
+su-exec 1000:1 id
 ```
 
-## TTY & parent/child handling
-
-Notice how `su` will make `ps` be a child of a shell while `su-exec`
-just executes `ps` directly.
-
-```shell
-$ docker run -it --rm alpine:edge su postgres -c 'ps aux'
-PID   USER     TIME   COMMAND
-    1 postgres   0:00 ash -c ps aux
-   12 postgres   0:00 ps aux
-$ docker run -it --rm -v $PWD/su-exec:/sbin/su-exec:ro alpine:edge su-exec postgres ps aux
-PID   USER     TIME   COMMAND
-    1 postgres   0:00 ps aux
-```
-
-## Why reinvent gosu?
-
-This does more or less exactly the same thing as [gosu](https://github.com/tianon/gosu)
-but it is only 10kb instead of 1.8MB.
-
+## Supported platforms
+- linux/386
+- linux/amd64
+- linux/arm/v6
+- linux/arm/v7
+- linux/arm64/v8
+- linux/ppc64le
+- linux/riscv64
+- linux/s390x
