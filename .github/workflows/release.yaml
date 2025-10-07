@@ -1,0 +1,108 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - "v*"
+
+env:
+  ALPINE_IMAGE: alpine:3.22
+
+jobs:
+  build-static:
+    name: build (${{ matrix.arch }})
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - platform: linux/amd64
+            arch: x86_64
+          - platform: linux/arm64
+            arch: arm64
+          - platform: linux/ppc64le
+            arch: ppc64le
+          - platform: linux/riscv64
+            arch: riscv64
+          - platform: linux/s390x
+            arch: s390x
+          - platform: linux/arm/v7
+            arch: armv7
+          - platform: linux/386
+            arch: x86
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Tag name
+        id: tag-name
+        run: echo "tag=${GITHUB_REF#refs/tags/}" >> "$GITHUB_OUTPUT"
+
+      - name: Enable QEMU
+        uses: docker/setup-qemu-action@v3
+        with:
+          platforms: all
+
+      - name: Build static (${{ matrix.arch }})
+        shell: bash
+        run: |
+          set -euxo pipefail
+
+          docker run --rm \
+            --platform=${{ matrix.platform }} \
+            -e HOST_UID="$(id -u)" \
+            -e HOST_GID="$(id -g)" \
+            -v "$PWD":/src -w /src \
+            "${ALPINE_IMAGE}" \
+            sh -exc '
+              apk add --no-cache build-base file
+              make clean
+              make su-exec
+              ./su-exec "$HOST_UID:$HOST_GID" make su-exec-static
+              ./su-exec "$HOST_UID:$HOST_GID" strip su-exec-static
+              file su-exec-static
+            '
+
+          mv su-exec-static "su-exec-static-${{ steps.tag-name.outputs.tag }}-${{ matrix.arch }}"
+
+      - name: Upload artifact (${{ matrix.arch }})
+        uses: actions/upload-artifact@v4
+        with:
+          name: su-exec-static-${{ steps.tag-name.outputs.tag }}-${{ matrix.arch }}
+          path: su-exec-static-${{ steps.tag-name.outputs.tag }}-${{ matrix.arch }}
+
+  release:
+    name: create release
+    runs-on: ubuntu-latest
+    needs: build-static
+
+    steps:
+      - name: Tag name
+        id: tag-name
+        run: echo "tag=${GITHUB_REF#refs/tags/}" >> "$GITHUB_OUTPUT"
+
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: dist
+          merge-multiple: true
+
+      - name: Generate SHA256SUMS
+        run: |
+          cd dist
+          sha256sum su-exec-* > SHA256SUMS
+          cat SHA256SUMS
+
+      - name: Create release and upload binaries
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ steps.tag-name.outputs.tag }}
+          name: ${{ steps.tag-name.outputs.tag }}
+          draft: true
+          prerelease: ${{ contains(steps.tag-name.outputs.tag, '-') }}
+          files: |
+            dist/su-exec-*
+            dist/SHA256SUMS
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
