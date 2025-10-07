@@ -30,17 +30,19 @@ Notice how `su` will make `ps` be a child of a shell while `su-exec`
 just executes `ps` directly.
 
 ```shell
-$ docker run -it --rm alpine:edge su postgres -c 'ps aux'
+$ docker run -it --rm alpine:3.7 su postgres -c 'ps aux'
 PID   USER     TIME   COMMAND
     1 postgres   0:00 ash -c ps aux
    12 postgres   0:00 ps aux
-$ docker run -it --rm -v $PWD/su-exec:/sbin/su-exec:ro alpine:edge su-exec postgres ps aux
+$ docker run -it --rm -v $PWD/su-exec:/sbin/su-exec:ro alpine:3.7 su-exec postgres ps aux
 PID   USER     TIME   COMMAND
     1 postgres   0:00 ps aux
 ```
+
+`su-exec` is no longer needed on Alpine 3.8+, `su` will execute the program
+directly. It is however still useful on Debian 12 and probably other distros.
 
 ## Why reinvent gosu?
 
 This does more or less exactly the same thing as [gosu](https://github.com/tianon/gosu)
 but it is only 10kb instead of 1.8MB.
-
