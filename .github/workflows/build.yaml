@@ -2,9 +2,6 @@ name: Build su-exec
 
 on:
   push:
-    branches: ["**"]
-    tags:
-      - "v*"
   pull_request:
 
 jobs:
@@ -28,60 +25,25 @@ jobs:
           ls -l su-exec
           file su-exec
 
-  build-static:
+  build-alpine:
+    name: Alpine build
     runs-on: ubuntu-latest
-    strategy:
-      fail-fast: false
-      matrix:
-        include:
-          - platform: linux/amd64
-            arch: amd64
-          - platform: linux/arm64
-            arch: arm64
-          - platform: linux/ppc64le
-            arch: ppc64le
-          - platform: linux/riscv64
-            arch: riscv64
-          - platform: linux/s390x
-            arch: s390x
-          - platform: linux/arm/v7
-            arch: armv7
-          - platform: linux/386
-            arch: x86
-
+    container:
+      image: alpine:3.22
     steps:
+      - name: Install tools needed for checkout
+        run: |
+          apk add --no-cache git ca-certificates build-base
+  
       - name: Checkout
         uses: actions/checkout@v4
-
-      - name: Enable QEMU
-        uses: docker/setup-qemu-action@v3
-        with:
-          platforms: all
-
-      - name: Build static inside Alpine (${{ matrix.arch }})
-        shell: bash
+  
+      - name: Build
+        run: make su-exec su-exec-static && strip su-exec su-exec-static
+  
+      - name: Show binary info
         run: |
-          set -euxo pipefail
+          ls -l su-exec su-exec-static
+          file su-exec su-exec-static
+          ldd su-exec su-exec-static
 
-          docker run --rm \
-            --platform=${{ matrix.platform }} \
-            -e HOST_UID="$(id -u)" \
-            -e HOST_GID="$(id -g)" \
-            -v "$PWD":/src -w /src \
-            alpine:3.22 \
-            sh -exc '
-              apk add --no-cache build-base file
-              make clean
-              make su-exec
-              ./su-exec "$HOST_UID:$HOST_GID" make su-exec-static
-              ./su-exec "$HOST_UID:$HOST_GID" strip su-exec-static
-              file su-exec-static
-            '
-
-          mv su-exec-static su-exec-static-${{ matrix.arch }}
-
-      - name: Upload artifact (${{ matrix.arch }})
-        uses: actions/upload-artifact@v4
-        with:
-          name: su-exec-static-${{ matrix.arch }}
-          path: su-exec-static-${{ matrix.arch }}
