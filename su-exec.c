@@ -23,6 +23,7 @@ int main(int argc, char *argv[])
 {
 	char *user, *group, **cmdargv;
 	char *end;
+	char *env;
 
 	uid_t uid = getuid();
 	gid_t gid = getgid();
@@ -35,6 +36,24 @@ int main(int argc, char *argv[])
 	group = strchr(user, ':');
 	if (group)
 		*group++ = '\0';
+
+	/* Check for env flag */
+	if (strcmp(user, "-e") == 0 || strcmp(user, "--env") == 0) {
+		/* Clear existing value */
+		user = NULL;
+
+		env = getenv("SUID");
+		if (env != NULL)
+			user = env;
+
+		env = getenv("SGID");
+		if (env != NULL)
+			group = env;
+		
+		if (!user && !group) {
+			err(1, "SUID and SGID environment variables unset");
+		}
+	}
 
 	cmdargv = &argv[2];
 
